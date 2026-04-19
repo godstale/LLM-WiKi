@@ -1,6 +1,6 @@
 ---
 name: llm-wiki
-description: Use when working with the LLM Wiki — ingesting raw documents (/wiki-ingest <file>), querying the knowledge base (/wiki-query <question>), health-checking for broken links and orphans (/wiki-lint), or building the interactive knowledge graph (/wiki-graph). Also triggers on natural language like "ingest raw/...", "query: ...", "lint the wiki", "build the knowledge graph".
+description: 'Use when working with the LLM Wiki — ingesting raw documents (/wiki-ingest <file>), querying the knowledge base (/wiki-query <question>), health-checking for broken links and orphans (/wiki-lint), or building the interactive knowledge graph (/wiki-graph). Also triggers on natural language like "ingest raw/...", "query: ...", "lint the wiki", "build the knowledge graph".'
 ---
 
 # LLM Wiki
