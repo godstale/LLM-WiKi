@@ -13,7 +13,7 @@ ingest → query → lint → graph
 ### Using npx (recommended)
 
 ```bash
-npx skills add llm-wiki
+npx skills add godstale/llm-wiki
 ```
 
 This installs the skill to your global Claude Code skills directory (`~/.claude/skills/llm-wiki`).
@@ -21,7 +21,7 @@ This installs the skill to your global Claude Code skills directory (`~/.claude/
 To install at project level instead:
 
 ```bash
-npx skills add llm-wiki --project
+npx skills add godstale/llm-wiki --project
 ```
 
 ### Manual installation
