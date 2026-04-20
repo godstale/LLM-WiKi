@@ -1,6 +1,6 @@
 ---
 name: llm-wiki
-description: 'Use when working with the LLM Wiki — ingesting raw documents (/wiki-ingest <file>), querying the knowledge base (/wiki-query <question>), health-checking for broken links and orphans (/wiki-lint), or building the interactive knowledge graph (/wiki-graph). Also triggers on natural language like "ingest raw/...", "query: ...", "lint the wiki", "build the knowledge graph".'
+description: 'Use when working with the LLM Wiki — ingesting raw documents (/wiki-ingest, /wiki-ingest <file>, /wiki-ingest --from <folder> --to <folder>), querying the knowledge base (/wiki-query <question>), health-checking for broken links and orphans (/wiki-lint), or building the interactive knowledge graph (/wiki-graph). Also triggers on natural language like "ingest raw/...", "ingest all files in raw/", "query: ...", "lint the wiki", "build the knowledge graph".'
 ---
 
 # LLM Wiki
@@ -74,7 +74,49 @@ Use `[[PageName]]` wikilinks to reference other wiki pages.
 
 ## /wiki-ingest
 
-**$ARGUMENTS** = path to file in `raw/`, e.g. `raw/papers/my-article.md`
+**$ARGUMENTS** (all optional):
+- No arguments → batch-ingest all files in `raw/`
+- `<file>` → ingest a single file (e.g. `raw/papers/my-article.md`)
+- `--from <folder>` → use `<folder>` as the source instead of `raw/`
+- `--to <folder>` → move originals to `<folder>` instead of `wiki/originals/`
+
+**Argument parsing rules:**
+- If the argument is a file path (has an extension or resolves to a file), treat it as a single-file ingest from that path.
+- If the argument is a folder path (no extension, resolves to a directory), treat it as `--from <folder>`.
+- `--from` and `--to` flags can be combined with a single file path.
+- When no `--to` is specified, originals always go to `wiki/originals/`.
+
+### Batch Mode (no arguments or `--from <folder>`)
+
+When no specific file is given, process **all** files in the source folder (`raw/` by default, or the folder specified with `--from`):
+
+1. Glob all files in the source folder (non-recursively first; include subdirectories only if the folder is explicitly specified with `--from`)
+2. Filter out already-processed files (files present in `wiki/originals/` or the `--to` destination)
+3. Process each file in sequence following the single-file ingest steps below
+4. Print a summary: files processed, pages created/updated, files moved
+
+### Destination Folder Rules (`--to <folder>`)
+
+When a custom destination is specified with `--to`, apply the PARA folder structure from `references/folder-managing.md`:
+
+1. **Determine the PARA category** based on the destination path or context:
+   - `00_Inbox` — unsorted / unclear category
+   - `01_Projects` — active project with a deadline
+   - `02_Areas` — ongoing responsibility (no deadline)
+   - `03_Resources` — reference material / reading notes
+   - `04_Archives` — completed or inactive material
+   If the `--to` path already starts with a PARA prefix (`00_`–`04_`), use it as-is.
+   Otherwise, ask the user which category applies before proceeding (or infer from content if confident).
+
+2. **Create the folder** under the destination using the PARA file-naming convention:
+   - Format: `YYYYMMDD_<SourceSlug>_<ShortDescription>`
+   - Example: `03_Resources/20260420_my-article_Reading-Notes/`
+   - Use today's date for `YYYYMMDD`.
+
+3. **Move the original file(s)** into that folder.
+   - Update `source_file` frontmatter in the wiki source page to point to the new path instead of `wiki/originals/`.
+
+4. **Do NOT create or modify `wiki/originals/`** when `--to` is specified.
 
 ### Pre-processing: Convert non-text files
 
@@ -102,10 +144,15 @@ Once a `.md` file is available, proceed with the steps below.
 3. Determine source slug from filename (kebab-case, no extension)
 4. Select template → see `references/templates.md` (Default Source / Diary / Meeting)
 5. Write `wiki/sources/<slug>.md` — set `source_file: wiki/originals/<slug>.md` in frontmatter
-6. **Move original files to `wiki/originals/`** (create folder if it doesn't exist):
-   - Move the `.md` source file: `raw/<name>.md` → `wiki/originals/<slug>.md`
-   - If a matching binary original exists (`.ppt`, `.pdf`, `.docx`, etc.), move it too: `wiki/originals/<slug>.<ext>`
-   - After moving, `raw/` should contain only files not yet processed
+6. **Move original files to the destination folder:**
+   - **Default (no `--to`):** move to `wiki/originals/` (create if it doesn't exist):
+     - `.md` source: `<source>/<name>.md` → `wiki/originals/<slug>.md`
+     - Matching binary original (`.ppt`, `.pdf`, `.docx`, etc.) → `wiki/originals/<slug>.<ext>`
+   - **Custom destination (`--to <folder>`):** apply PARA folder rules (see *Destination Folder Rules* above):
+     - Create `<folder>/YYYYMMDD_<slug>_<ShortDescription>/` if it doesn't exist
+     - Move all related files into that subfolder
+     - Set `source_file` frontmatter to the new path
+   - After moving, the source folder should contain only files not yet processed
 7. Update `wiki/index.md` — add entry under Sources section
 8. Update `wiki/overview.md` — revise living synthesis if warranted
 9. Create/update entity pages (`wiki/entities/EntityName.md`) for key people, companies, projects
@@ -267,7 +314,9 @@ python tools/file_to_markdown.py --input_dir raw/pdfs/
 
 ## Gotchas
 
-- **`raw/` is a drop zone, not a permanent store** — files are moved to `wiki/originals/` after ingest; only unprocessed files remain in `raw/`
+- **`raw/` is a drop zone, not a permanent store** — files are moved out after ingest (to `wiki/originals/` or a custom `--to` folder); only unprocessed files remain
+- **`--from <folder>` overrides `raw/`** — all files in the specified folder are treated as ingest candidates
+- **`--to <folder>` overrides `wiki/originals/`** — a PARA-structured subfolder is created inside the destination; `source_file` frontmatter reflects the new path
 - **Never modify files in `wiki/originals/`** — they are read-only archives of the original source documents
 - **Always update `wiki/index.md`** on every ingest — stale index breaks wiki-query
 - **Wikilinks are case-sensitive** — `[[OpenAI]]` ≠ `[[Openai]]`; match the exact filename
