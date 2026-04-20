@@ -196,6 +196,17 @@ python scripts/file_to_markdown.py --input_dir raw/
 
 ---
 
+## Extensions
+
+### WiKi-Hub
+
+You can merge other people's wikis into your current project using the **WiKi-Hub** skill. This allows for seamless knowledge sharing and collaboration across different wiki repositories.
+
+- **GitHub Repository:** [godstale/WiKi-Hub](https://github.com/godstale/WiKi-Hub)
+- **Installation:** `npx skills add godstale/wiki-hub`
+
+---
+
 ## License
 
 MIT
