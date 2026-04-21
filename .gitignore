@@ -32,3 +32,6 @@ pip-delete-this-directory.txt
 # Logs
 logs
 *.log
+
+# Etc
+references/wiki-hub/

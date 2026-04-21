@@ -1,0 +1,155 @@
+# ============================================================
+# Universal Ontology Template — LLM Wiki
+# ============================================================
+# Starting skeleton for `wiki/ontology.yaml`.
+#
+# How to use:
+#   1. Run `/wiki-ontology-init` — the skill interviews you and
+#      produces `wiki/ontology.yaml` based on this template.
+#   2. Or copy this file manually to `wiki/ontology.yaml` and edit.
+#
+# Principles:
+#   - The 6 axes below cover most project knowledge bases.
+#     Keep what you need; deactivate the rest via `active: false`.
+#   - `default_classes` are EXAMPLES. Add, rename, or delete freely.
+#   - `relations` is a common predicate vocabulary. Extend if needed.
+#   - Ontology is a HINT, not a hard constraint. Documents may still
+#     introduce entities outside this schema; the wiki will accept
+#     them (they just won't have a `class:` tag).
+# ============================================================
+
+version: 1
+
+project:
+  name: "<your-project-name>"
+  # type: rough classification — tailors interview questions and defaults
+  type: "<software-project | research | product | campaign | operations | personal | other>"
+  description: "<one-sentence project description>"
+  start_date: null      # YYYY-MM-DD or null
+  end_date:   null      # YYYY-MM-DD or null (null = ongoing)
+
+# ============================================================
+# 6 Upper Axes — flip `active: false` to disable an axis entirely
+# ============================================================
+axes:
+
+  # ---------- 1. Actor (WHO) ----------
+  # Subjects that act, decide, own, or are affected.
+  Actor:
+    active: true
+    description: "Who acts, owns, decides, or is affected"
+    default_classes:
+      Person:       {properties: [role, team, email],               folder: entities}
+      Team:         {properties: [lead, members, domain],           folder: entities}
+      Role:         {properties: [responsibilities, reports_to],    folder: entities}
+      Organization: {properties: [type, external],                  folder: entities}
+      Stakeholder:  {properties: [interest, influence],             folder: entities}
+
+  # ---------- 2. Activity (WHAT HAPPENS) ----------
+  # Work units, phases, events, decisions.
+  Activity:
+    active: true
+    description: "Tasks, phases, meetings, decisions, events"
+    default_classes:
+      Task:     {properties: [owner, status, deadline, deliverables, priority], folder: entities}
+      Phase:    {properties: [starts_at, ends_at, order],                        folder: entities}
+      Meeting:  {properties: [attendees, date, decisions],                       folder: entities}
+      Decision: {properties: [made_by, made_at, rationale, alternatives],        folder: entities}
+      Event:    {properties: [date, type],                                       folder: entities}
+
+  # ---------- 3. Artifact (OUTPUTS) ----------
+  # Things produced — documents, code, designs.
+  Artifact:
+    active: true
+    description: "Documents, deliverables, code, designs, reports"
+    default_classes:
+      Document:     {properties: [author, date, version, status],                 folder: entities}
+      Deliverable:  {properties: [produced_by, consumed_by, status, acceptance_criteria], folder: entities}
+      CodeArtifact: {properties: [repo, path, owner, language],                   folder: entities}
+      Design:       {properties: [author, iteration, format],                     folder: entities}
+      Report:       {properties: [author, period, audience],                      folder: entities}
+
+  # ---------- 4. Objective (WHY) ----------
+  # Goals, requirements, KPIs, risks.
+  Objective:
+    active: true
+    description: "Goals, milestones, requirements, KPIs, risks"
+    default_classes:
+      Goal:        {properties: [parent_goal, target_date, metric, status],            folder: concepts}
+      Requirement: {properties: [priority, source, status, acceptance_criteria],       folder: concepts}
+      Milestone:   {properties: [date, exit_criteria, status],                         folder: concepts}
+      KPI:         {properties: [target, measurement, frequency],                      folder: concepts}
+      Risk:        {properties: [probability, impact, mitigation, owner],              folder: concepts}
+
+  # ---------- 5. Resource (WITH WHAT) ----------
+  # Budget, tools, assets, time.
+  Resource:
+    active: false   # OFF by default — enable if you track budget/tools
+    description: "Budget, tools, time, assets"
+    default_classes:
+      Budget: {properties: [amount, currency, period, owner], folder: entities}
+      Tool:   {properties: [vendor, license, cost, owner],    folder: entities}
+      Asset:  {properties: [type, location, owner],           folder: entities}
+
+  # ---------- 6. Context (BACKGROUND) ----------
+  # Domain, technology, constraints.
+  Context:
+    active: false   # OFF by default — enable for cross-domain projects
+    description: "Domain, technology, constraints"
+    default_classes:
+      Domain:     {properties: [industry, expertise],       folder: concepts}
+      Technology: {properties: [category, version, vendor], folder: concepts}
+      Constraint: {properties: [type, source, hard_or_soft], folder: concepts}
+
+# ============================================================
+# Cross-Axis Relations (Predicates)
+# ============================================================
+# Conventions:
+#   - `domain` / `range` use axis names (Actor, Activity, ...) or
+#     class names (Team, Task, ...), OR the string `any` for polymorphic.
+#   - `inverse` — reverse predicate name (optional).
+#   - `transitive` — chained relations imply further links (optional).
+# ============================================================
+relations:
+
+  # --- Responsibility / Assignment ---
+  owns:         {domain: [Actor], range: [Activity, Artifact, Objective], inverse: owned_by}
+  assigned_to:  {domain: [Actor], range: [Activity],                      inverse: has_assignee}
+  approves:     {domain: [Actor], range: [Decision, Deliverable]}
+  reports_to:   {domain: [Actor], range: [Actor],                         transitive: true}
+
+  # --- Causality / Production ---
+  produces:     {domain: [Activity],            range: [Artifact]}
+  consumes:     {domain: [Activity],            range: [Artifact, Resource]}
+  requires:     {domain: [Activity, Artifact],  range: [Activity, Artifact, Resource]}
+  blocks:       {domain: [Activity],            range: [Activity]}
+  achieves:     {domain: [Activity, Artifact],  range: [Objective]}
+
+  # --- Structural ---
+  part_of:      {domain: any,                   range: any, transitive: true, inverse: contains}
+
+  # --- Temporal ---
+  precedes:         {domain: [Activity], range: [Activity], transitive: true}
+  concurrent_with:  {domain: [Activity], range: [Activity]}
+
+  # --- Provenance / Reference ---
+  authored_by:  {domain: [Artifact], range: [Actor]}
+  based_on:     {domain: [Artifact], range: [Artifact]}
+  references:   {domain: [Artifact], range: any}
+
+# ============================================================
+# Workflow (Optional)
+# ============================================================
+# Declare phase ordering. Used by `/wiki-query` for temporal
+# filtering and `/wiki-graph` for phase-colored lanes.
+# Leave `phases: []` if the project has no fixed phase order.
+# ============================================================
+workflow:
+  phases: []
+  # Example:
+  # phases:
+  #   - {id: discover, order: 1, description: "Research & requirements"}
+  #   - {id: design,   order: 2, description: "Architecture & specs"}
+  #   - {id: build,    order: 3, description: "Implementation"}
+  #   - {id: validate, order: 4, description: "QA & review"}
+  #   - {id: release,  order: 5, description: "Deploy & handoff"}
