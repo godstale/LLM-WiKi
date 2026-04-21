@@ -121,6 +121,7 @@ Use `[[PageName]]` wikilinks to reference other wiki pages.
 - `--force-update` → always overwrite the existing entry without prompting (equivalent to `/wiki-update` but driven by the source file)
 - `--no-interview` → skip the ontology Context Interview (use auto-inferred values only). No-op if ontology is absent.
 - `--batch-defaults` → in batch mode, reuse the first file's interview answers as defaults for the rest (confirm-only per file)
+- `--summary-only` → extract only summary + metadata; do not attempt full-text conversion. Overrides the auto-strategy for the file. Useful for dense spreadsheets, large binary specs, or files whose raw content is not meaningful as prose.
 
 **Argument parsing rules:**
 - If the argument is a file path (has an extension or resolves to a file), treat it as a single-file ingest from that path.
@@ -128,6 +129,7 @@ Use `[[PageName]]` wikilinks to reference other wiki pages.
 - `--from` and `--to` flags can be combined with a single file path.
 - `--no-copy` is incompatible with `--to` — if both are given, warn the user and abort.
 - `--force-new` and `--force-update` are mutually exclusive — if both are given, warn the user and abort.
+- `--summary-only` is compatible with all other flags.
 - When no `--to` is specified and `--no-copy` is not set, originals always go to `wiki/originals/`.
 
 ### Batch Mode (no arguments or `--from <folder>`)
@@ -167,7 +169,27 @@ When a custom destination is specified with `--to`, apply the PARA folder struct
 
 ### Pre-processing: Convert non-text files
 
-If the source file is not already `.md` or `.txt` (e.g. `.docx`, `.pptx`, `.xlsx`, `.pdf`, `.doc`, `.ppt`, `.xls`):
+#### Ingest Strategy Selection
+
+Before converting, determine the ingest strategy for the file. Two strategies exist:
+
+| Strategy | Behavior | When applied |
+|----------|----------|--------------|
+| **full** | Full-text conversion → ingest entire content | `.md`, `.txt`, narrative `.pdf`, `.docx` under ~30 pages |
+| **summary-only** | Read file directly → extract summary + metadata only; skip full conversion | `.xlsx`/`.xls`, `.pptx`/`.ppt` over ~20 slides, `.pdf` over ~30 pages, any file with `--summary-only` flag |
+
+**Selection rules (in priority order):**
+1. If `--summary-only` flag is set → always use **summary-only** strategy.
+2. Else if the file is `.xlsx` or `.xls` → **summary-only** (spreadsheet content converts poorly to prose).
+3. Else if the file is `.pptx` or `.ppt` → **summary-only** (slide decks are better represented by outline + metadata).
+4. Else if the file is `.pdf` and page count > 30 → **summary-only**.
+5. Otherwise → **full**.
+
+Announce the chosen strategy before proceeding: *"Using summary-only strategy for `<filename>` (reason: <reason>)."* For full strategy, proceed to conversion below. For summary-only, skip conversion and go directly to **Summary-Only Ingest**.
+
+#### Full Strategy: Convert non-text files
+
+If strategy is **full** and the file is not already `.md` or `.txt`:
 
 1. **Try agent tools first** — invoke the appropriate skill for the file type:
    - `.docx` / `.doc` → `docx` skill
@@ -182,7 +204,73 @@ If the source file is not already `.md` or `.txt` (e.g. `.docx`, `.pptx`, `.xlsx
    ```
    This converts all non-markdown files in `raw/` to `.md`. Re-run the ingest with the generated `.md` file.
 
-Once a `.md` file is available, proceed with the steps below.
+Once a `.md` file is available, proceed with **Agent-Based Ingest** below.
+
+#### Summary-Only Ingest
+
+Used when the file's raw content is not meaningful as prose (dense spreadsheets, large specs, presentation decks).
+
+1. **Read the file directly** using the appropriate agent tool (do not save a converted `.md`):
+   - `.xlsx` / `.xls` → `xlsx` skill (read sheet names, headers, row counts, key values)
+   - `.pptx` / `.ppt` → `pptx` skill (read slide titles, section headers, speaker notes)
+   - `.pdf` → `pdf` skill (read first 3 pages + TOC if present)
+   - Others → read what is accessible
+
+2. **Extract the following metadata** from file content and any available context (filename, path, date modified):
+
+   | Field | Source |
+   |-------|--------|
+   | `title` | File name, title slide, or first heading |
+   | `purpose` | Inferred from content type and section headers |
+   | `content_type` | `spreadsheet` / `presentation` / `spec` / `report` / `other` |
+   | `author` / `team` | Author field, metadata, path context (e.g. `/finance/`) |
+   | `created_at` | File metadata, header date, or filename date pattern |
+   | `scope` | What the document covers (e.g. "Q2 budget for 3 teams") |
+   | `sheet_names` | (spreadsheets) list of sheet names |
+   | `slide_count` | (presentations) number of slides |
+   | `sections` | Top-level headings or sheet names as a bullet list |
+   | `key_values` | Up to 5 important data points visible without deep reading |
+
+3. **Write `wiki/sources/<slug>.md`** using the summary-only template:
+
+   ```yaml
+   ---
+   title: "<Title>"
+   type: source
+   ingest_mode: summary-only
+   content_type: <spreadsheet|presentation|spec|report|other>
+   source_file: wiki/originals/<slug>.<ext>
+   created_at: <YYYY-MM-DD or blank>
+   author: <name or blank>
+   team: <team or blank>
+   tags: []
+   sources: []
+   last_updated: <YYYY-MM-DD>
+   ---
+
+   ## Purpose
+   <One paragraph: what this document is for and who uses it.>
+
+   ## Scope
+   <What the document covers: subject, time period, teams, systems.>
+
+   ## Structure
+   <Bullet list of sheets / sections / slides with one-line descriptions.>
+
+   ## Key Values
+   <Up to 5 important data points, figures, or decisions visible at a glance.>
+
+   ## How to Use
+   Load the original file at `<source_file>` for full data.
+   ```
+
+4. **Skip deep entity/concept extraction** — only create entity/concept pages when a name is explicit and prominent (e.g. a team name in the filename or title). Do not enumerate every cell reference.
+
+5. Continue from **step 6** of Agent-Based Ingest (copy original, update index, log).
+
+**When `/wiki-query` loads a summary-only source:**
+- The source page answers "what is this file and where is it."
+- If the query requires actual data from the file, the agent reads `source_file` on demand and answers from the raw content — then optionally offers to update the source page with the newly surfaced data.
 
 ### Duplicate Detection (single-file ingest)
 
@@ -205,6 +293,8 @@ Before ingesting, resolve whether the slug already exists in `wiki/history.json`
 5. If the slug does not exist: proceed normally.
 
 ### Agent-Based Ingest
+
+*(Full strategy only — for summary-only strategy, see Summary-Only Ingest above)*
 
 1. Read the source file in full
 2. Read `wiki/index.md` and `wiki/overview.md` for current context
@@ -233,6 +323,7 @@ Before ingesting, resolve whether the slug already exists in `wiki/history.json`
     - `pages_created` = `["sources/<slug>.md"]`
     - `entities_created` = list of entity page paths written in step 9
     - `concepts_created` = list of concept page paths written in step 10
+    - `ingest_mode` = `"full"` or `"summary-only"` depending on the strategy used
     - `status` = `"active"`
     - Use the **Write tool** to save (never shell echo — `|` in JSON is safe in Write but not in shell)
 13. Append to `wiki/log.md`: `## [YYYY-MM-DD] ingest | <Title>`
@@ -709,3 +800,7 @@ python tools/file_to_markdown.py --input_dir raw/pdfs/
 - **`ontology-guide.md` is derived** — regenerated from `ontology.yaml`. Users editing `ontology-guide.md` directly will lose changes on `--regen-guide`.
 - **Unknown classes/predicates surface in validation, not ingest** — `/wiki-ingest` may write unknown values when the user enters them during interview; they get flagged later by `/wiki-ontology-validate` or `/wiki-lint`. This keeps ingest uninterrupted while still catching drift.
 - **Context Interview answers belong in `context:`, not in the page body** — do not duplicate interview answers into the narrative sections of the source page.
+- **`--summary-only` skips full-text conversion** — the wiki stores only a metadata + summary page; the original file is the authoritative data source. `/wiki-query` loads the original on demand when the answer requires actual data.
+- **summary-only is applied automatically to `.xlsx` and `.pptx`** — to force full conversion of these types, explicitly pass `--no-summary` (not yet implemented; request via issue). For now, rename the file to `.md` before ingesting if full text is needed.
+- **`ingest_mode` in `history.json` is informational** — `/wiki-update` re-uses the same strategy as the original ingest unless `--summary-only` is explicitly passed or removed.
+- **Do not enumerate cell data in summary-only pages** — key values (up to 5) are enough; the original file is always available via `source_file`.
