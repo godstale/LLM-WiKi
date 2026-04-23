@@ -27,6 +27,11 @@ project:
   description: "<one-sentence project description>"
   start_date: null      # YYYY-MM-DD or null
   end_date:   null      # YYYY-MM-DD or null (null = ongoing)
+  # schema_version: increment when making breaking changes (class rename/removal,
+  # property rename/removal, predicate rename/removal, phase id change).
+  # Non-breaking additions (new class/property/predicate/phase) do not require a bump.
+  # After bumping: run /wiki-ontology-validate and fix ERRORs; log in wiki/log.md.
+  schema_version: 1
 
 # ============================================================
 # 6 Upper Axes — flip `active: false` to disable an axis entirely

@@ -166,14 +166,29 @@ Run after loading `wiki/ontology.yaml` (step 2a) and before writing the source p
          - SprintGoal-Q2 → [achieves / references / part_of / skip]
    ```
 
-3. **Validation during interview:**
-   - Phase not in `workflow.phases[].id` → warn, allow to add
-   - Unknown class/predicate → warn, allow (flagged later by `/wiki-ontology-validate`)
+3. **Inline schema validation — act immediately, do not defer:**
+   - Phase not in `workflow.phases[].id` → warn; offer to pick an existing phase or add the new one to the ontology
+   - Unknown `class:` → warn; show valid classes from the ontology; offer to correct or proceed as-is
+   - Unknown `relations[].predicate` → warn; show valid predicates; offer to correct or proceed as-is
+   - Missing required properties for the chosen `class:` (fields listed in `axes.<Axis>.default_classes.<ClassName>.properties`) → list the missing fields; offer to fill now or skip (will appear again in `/wiki-ontology-validate`)
    - New target names → offer: *"`<name>` is new. Create stub page? (yes/no)"* → on yes, create minimal page with "TODO" body
+   - Violations do **not** block ingest — all are collected and printed as a `⚠ Schema warnings` block at the end of ingest (step 5)
 
-4. **Write answers to source frontmatter** under `context:` block — schema per `references/templates.md` (Ontology-Extended Fields section)
+4. **Write answers to source frontmatter** under `context:` block — schema per `references/ontology-commands.md` (Page Frontmatter with Ontology section)
 
-5. **Propagate to entity/concept pages:** write inverse predicates where declared:
+5. **Ingest-time schema summary:** After writing all pages for this source, if any violations were collected in step 3, print:
+
+   ```
+   ⚠ Schema warnings for <slug>:
+   - Unknown class `ClassName` — valid classes: [Person, Team, Role, ...]
+   - Missing required properties for Task: owner, deadline
+   - Unknown predicate `custom_rel` — valid predicates: [owns, produces, achieves, ...]
+   Run /wiki-ontology-validate for a full cross-wiki report.
+   ```
+
+   Omit this block entirely when there are no warnings.
+
+6. **Propagate to entity/concept pages:** write inverse predicates where declared:
    - `owns` ↔ `owned_by` (bidirectional)
    - `part_of` ↔ `contains` (bidirectional)
    - `achieves` → no declared inverse

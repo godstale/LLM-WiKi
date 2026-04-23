@@ -86,15 +86,21 @@ python scripts/ontology_validate.py --json    # machine-readable JSON on stdout
 
 1. If `wiki/ontology.yaml` absent → *"No ontology configured. Nothing to validate."*
 2. Load the ontology
-3. Glob every `.md` in `wiki/sources/`, `wiki/entities/`, `wiki/concepts/`, `wiki/syntheses/`. For each:
-   - Check `class:` is declared in some axis's `default_classes`
-   - Check every `relations[].predicate` is declared in `relations:` block
-   - Check domain/range match the predicate declaration
-   - Check `context.phase` is in `workflow.phases[].id`
-   - Flag missing properties listed in class's `properties:` array
-4. Produce violation report (see format below)
+3. Glob every `.md` in `wiki/sources/`, `wiki/entities/`, `wiki/concepts/`, `wiki/syntheses/`. For each page, run checks at two severity levels:
+
+   **ERROR** (schema contract broken — must fix):
+   - `class:` is not declared in any axis's `default_classes`
+   - `relations[].predicate` is not declared in `relations:` block
+   - `context.phase` is not in `workflow.phases[].id`
+   - Domain/range mismatch on a declared predicate
+
+   **WARNING** (data gap — should fix):
+   - Properties listed in the class's `properties:` array are absent from the page frontmatter
+   - Activity instances with no `context.phase` when phases are declared
+
+4. Produce violation report grouped by severity (see format below)
 5. Ask: *"Save to `wiki/ontology-validation-report.md`?"*
-6. Append to `wiki/log.md`: `## [YYYY-MM-DD] ontology-validate | <N> violations`
+6. Append to `wiki/log.md`: `## [YYYY-MM-DD] ontology-validate | <N> errors, <M> warnings`
 
 ---
 
@@ -102,23 +108,28 @@ python scripts/ontology_validate.py --json    # machine-readable JSON on stdout
 
 Run only when `wiki/ontology.yaml` exists. Add to the lint report after standard checks 1–6.
 
-**7. Unknown class** — `class:` values not in any axis's `default_classes`
-**8. Unknown predicate** — `relations[].predicate` not declared in `relations:` block
-**9. Unknown phase** — `context.phase` not in `workflow.phases[].id`
-**10. Domain/range violation** — source class not in predicate's `domain`, or target class not in `range`
+**7. Unknown class** *(ERROR)* — `class:` values not in any axis's `default_classes`
+**8. Unknown predicate** *(ERROR)* — `relations[].predicate` not declared in `relations:` block
+**9. Unknown phase** *(ERROR)* — `context.phase` not in `workflow.phases[].id`
+**10. Domain/range violation** *(ERROR)* — source class not in predicate's `domain`, or target class not in `range`
    - Example: `{predicate: produces}` on `class: Document` — `produces` expects `domain: [Activity]`
-**11. Cardinality anomalies** (best-effort) — instances missing properties suggested by the class (e.g. Task needs `owner`). Flagged as "potential gap," not error.
-**12. Workflow gaps** — Activity instances with no `context.phase`, or phases with zero instances
+**11. Missing required properties** *(WARNING)* — instances with a declared `class:` that are missing properties listed in that class's `properties:` array. Report each missing field by name (e.g. "Task `wiki/entities/TaskX.md` missing: owner, deadline").
+**12. Workflow gaps** *(WARNING)* — Activity instances with no `context.phase`, or phases with zero instances
 
-### Ontology Violations Report Section
+### Ontology Violations Report Format
 
 ```markdown
-## Ontology Violations (N found)
+## Ontology Violations
+
+### Errors (N) — schema contract broken
 - Unknown class `ClassName` in `wiki/entities/Foo.md`
 - Unknown predicate `custom_relation` in `wiki/sources/bar.md`
 - Unknown phase `Shipping` in `wiki/sources/baz.md` (declared phases: Discover, Build, Validate)
 - Domain violation: `{predicate: produces}` on `wiki/entities/TeamAlpha.md` (class: Team) — expects domain [Activity]
-- Missing required property `owner` on Task instance `wiki/entities/TaskX.md`
+
+### Warnings (M) — data gaps
+- Missing property `owner` on Task instance `wiki/entities/TaskX.md`
+- Missing property `deadline` on Task instance `wiki/entities/TaskX.md`
 - Phase `Validate` has no associated Activity instances
 ```
 
@@ -158,6 +169,101 @@ When a predicate has a declared `inverse`, draw a single directed edge — do no
 - **Ontology is opt-in** — every command works without `wiki/ontology.yaml`; ontology features are additive
 - **Never edit `wiki/ontology.yaml` silently** — only `/wiki-ontology-init` and `--edit` may modify it
 - **`ontology-guide.md` is derived** — regenerated from `ontology.yaml`; direct edits are lost on `--regen-guide`
-- **Unknown classes/predicates do not block ingest** — they surface in `/wiki-ontology-validate`; ingest remains uninterrupted
+- **Unknown classes/predicates do not block ingest** — printed as inline `⚠ Schema warnings` at end of ingest; full report at `/wiki-ontology-validate`
 - **Context Interview answers belong in `context:`, not in the page body** — do not duplicate into narrative sections
 - **`--summary-only` sources are read on demand by `/wiki-query`** — original file is the authoritative data source
+- **Entity/concept frontmatter is derived from the ontology, not from fixed templates** — field names must match the class's `properties:` array in `wiki/ontology.yaml`
+
+---
+
+## Schema Migration
+
+When you change `wiki/ontology.yaml` (rename a class, remove a property, change predicate domain/range, modify phase ids):
+
+1. Increment `project.schema_version` in `wiki/ontology.yaml`
+2. Run `/wiki-ontology-validate` — it lists all pages that now violate the updated schema
+3. For each ERROR: update the page frontmatter, or run `/wiki-update <slug>` to re-derive from the original source
+4. For each WARNING: fill missing properties directly on the page, or leave for later
+5. Append to `wiki/log.md`: `## [YYYY-MM-DD] schema-migration | v<N> → v<N+1>: <what changed>`
+
+**Breaking changes** (must migrate): class rename or removal, property rename or removal, predicate rename or removal, phase id change.
+**Non-breaking changes** (no migration needed): adding a new class, property, predicate, or phase; changing descriptions.
+
+---
+
+## Page Frontmatter with Ontology
+
+When `wiki/ontology.yaml` is active, the ontology class definition is the **authoritative schema** for entity and concept pages. Derive field names from `axes.<Axis>.default_classes.<ClassName>.properties` — do not invent fields not declared there.
+
+### Source page — `context:` block
+
+Added by `/wiki-ingest` during the Context Interview:
+
+```yaml
+---
+title: "Sprint 12 Retrospective"
+type: source
+class: Meeting                   # ontology class name
+tags: [meeting]
+date: 2026-04-18
+source_file: wiki/originals/sprint12-retro.md
+sources: []
+last_updated: 2026-04-18
+context:
+  authored_by: Alice             # Actor instance name (must match entity page)
+  authored_at: 2026-04-18
+  phase: Build                   # workflow.phases[].id value
+  activity: sprint-12            # Activity instance name
+  artifact_type: Meeting         # class from Artifact or Activity axis
+  relates_to:
+    - {target: TeamAlpha,     predicate: part_of}
+    - {target: SprintGoal-Q2, predicate: achieves}
+---
+```
+
+### Entity page — `class:` and `relations:` blocks
+
+```yaml
+---
+title: "TeamAlpha"
+type: entity
+class: Team                      # must match a class in wiki/ontology.yaml
+tags: []
+sources: [sprint12-retro, design-doc-v2]
+last_updated: 2026-04-18
+properties:                      # fields from class's properties: array
+  lead: Alice
+  domain: backend-services
+relations:
+  - {predicate: owns,    target: TaskX}
+  - {predicate: part_of, target: ProjectAlpha}
+---
+```
+
+### Concept page — same extension pattern
+
+```yaml
+---
+title: "SprintGoal-Q2"
+type: concept
+class: Goal                      # typically from Objective or Context axis
+sources: [sprint12-retro]
+last_updated: 2026-04-18
+properties:
+  parent_goal: YearlyOKR-2026
+  target_date: 2026-06-30
+  metric: "<measurable target>"
+  status: on-track
+relations:
+  - {predicate: part_of, target: YearlyOKR-2026}
+---
+```
+
+### Field rules
+
+- `class:` must match a class name declared in `wiki/ontology.yaml` under some axis's `default_classes`.
+- `relations[].predicate` must match a key under `relations:` in `wiki/ontology.yaml`.
+- `relations[].target` is an entity/concept name — case-sensitive, must match the page filename without extension.
+- `context.phase` must match a `workflow.phases[].id` when phases are declared.
+- All ontology fields are optional — omitting them degrades gracefully to non-ontology behavior.
+- Unknown values are not an ingest-time error; they produce inline `⚠ Schema warnings` and are fully reported by `/wiki-ontology-validate`.

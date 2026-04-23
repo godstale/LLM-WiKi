@@ -75,12 +75,12 @@ Check `wiki/history.json` for the candidate slug before ingesting:
 6. Copy original to `wiki/originals/<slug>.md` (skip if `--no-copy`; apply PARA rules if `--to`)
 7. Update `wiki/index.md` — add entry: `- [Title](sources/slug.md) — one-line summary`
 8. Update `wiki/overview.md` — revise living synthesis if warranted
-9. Create/update entity pages in `wiki/entities/EntityName.md`
-10. Create/update concept pages in `wiki/concepts/ConceptName.md`
+9. Create/update entity pages in `wiki/entities/EntityName.md` — when `wiki/ontology.yaml` exists, derive `class:` + `properties:` frontmatter from the matching class definition in the ontology; do not invent fields not declared there
+10. Create/update concept pages in `wiki/concepts/ConceptName.md` — same ontology-derived frontmatter applies
 11. Flag any contradictions with existing wiki content
 12. Update `wiki/history.json` — **always use Write tool** (read existing → merge entry → overwrite). Schema → see `references/ingest-advanced.md`
 13. Append to `wiki/log.md`: `## [YYYY-MM-DD] ingest | <Title>`
-14. Post-ingest: check broken `[[wikilinks]]`, verify all new pages in index, print change summary
+14. Post-ingest: check broken `[[wikilinks]]`, verify all new pages in index, print change summary. If `wiki/ontology.yaml` exists: print any schema warnings from this ingest as a `⚠ Schema warnings` block (unknown class, missing required properties, unknown predicates) — these do not block ingest but should be resolved
 
 ---
 
