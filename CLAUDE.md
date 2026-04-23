@@ -87,6 +87,38 @@ graph/            # graph.json + graph.html
 - `graph/graph.html` is self-contained — JSON is inlined, not loaded from disk
 - All scripts use `Path.cwd()` as the repo root — run from the wiki project root, not from the scripts directory
 
+## Claude API Integration — Prompt Caching
+
+When automating wiki workflows via the Claude API (e.g. batch ingestion scripts, CI pipelines), apply **prompt caching** to the skill content to avoid re-tokenizing on every call:
+
+```python
+import anthropic
+
+skill_content = open("SKILL.md").read()
+
+client = anthropic.Anthropic()
+response = client.messages.create(
+    model="claude-sonnet-4-6",
+    max_tokens=4096,
+    system=[
+        {
+            "type": "text",
+            "text": skill_content,
+            "cache_control": {"type": "ephemeral"}  # cache for up to 5 min
+        }
+    ],
+    messages=[{"role": "user", "content": "/wiki-ingest raw/my-doc.md"}]
+)
+```
+
+**When to include reference files in the cache block:** only load the reference files that the current operation needs (e.g. add `references/ingest-advanced.md` content to the cached block for batch ingest jobs). Loading all reference files unconditionally wastes the cache budget.
+
+**Cache TTL:** 5 minutes. For long-running batch jobs, re-create the client or re-send the system block before TTL expires to keep the cache warm.
+
+See [Anthropic prompt caching docs](https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching) for full details.
+
+---
+
 ## PARA Folder Structure (`--to` flag)
 
 When `/wiki-ingest --to <folder>` is used, the skill applies PARA categorization:
