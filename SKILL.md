@@ -69,11 +69,25 @@ Check `wiki/history.json` for the candidate slug before ingesting:
 
 1. Read the source file in full
 2. Read `wiki/index.md` and `wiki/overview.md`. If `wiki/ontology.yaml` exists, run Context Interview (see `references/ingest-advanced.md`) unless `--no-interview`
-3. Derive slug from filename (kebab-case, no extension)
+3. Derive title and slug:
+   a. **Timestamp filename / empty title** — if the filename matches `YYYY-MM-DDTHH_MM_SS…` or bare `YYYY-MM-DD`, or the source's `title` field is empty/whitespace:
+      - Read the first meaningful content lines (skip blank lines, lone URLs, timestamps)
+      - Generate a concise descriptive title in the source's language (3–7 words)
+      - Slug = `kebab-case(title)` + `-YYYYMMDD` date suffix (from file metadata or today) to guarantee uniqueness
+      - If content is < 10 meaningful words or context is unclassifiable, use title `임시메모-YYYYMMDD` and assign category `임시메모`
+   b. **Named filename** — slug = `kebab-case(filename, no extension)`; title = source's title field or first heading
 4. Select template → see `references/templates.md`
 5. Write `wiki/sources/<slug>.md` with `source_file: wiki/originals/<slug>.md`
 6. Copy original to `wiki/originals/<slug>.md` (skip if `--no-copy`; apply PARA rules if `--to`)
-7. Update `wiki/index.md` — add entry: `- [Title](sources/slug.md) — one-line summary`
+7. Update `wiki/index.md`:
+   - Place the entry under the matching category `##` section (create section if absent); maintain sections in this order: `## 기술/개발` · `## 업무/프로젝트` · `## 개인/생활` · `## 여행` · `## 임시메모`
+   - Format: `- [Title](sources/slug.md) — one-line summary` (**summary is mandatory** — never omit or leave blank)
+   - Classify by dominant content signal:
+     - **기술/개발**: code, tools, APIs, programming, software, hardware, dev workflows
+     - **업무/프로젝트**: work meetings, job-related memos, company projects, career
+     - **개인/생활**: accounts, IDs, passwords, addresses, family, finance, household
+     - **여행**: travel plans, trekking, transportation, accommodation, places
+     - **임시메모**: < 10 meaningful words, single snippet, or ambiguous context
 8. Update `wiki/overview.md` — revise living synthesis if warranted
 9. Create/update entity pages in `wiki/entities/EntityName.md` — when `wiki/ontology.yaml` exists, derive `class:` + `properties:` frontmatter from the matching class definition in the ontology; do not invent fields not declared there
 10. Create/update concept pages in `wiki/concepts/ConceptName.md` — same ontology-derived frontmatter applies
