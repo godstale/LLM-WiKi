@@ -141,8 +141,13 @@ One-paragraph definition.
 ---
 title: "Query: <short question title>"
 type: synthesis
+date: YYYY-MM-DD
 tags: []
 sources: [slug1, slug2]
+entities: [Entity1, Entity2]
+concepts: [Concept1, Concept2]
+relations:
+  - [Subject, predicate, Object]
 last_updated: YYYY-MM-DD
 ---
 
@@ -152,7 +157,12 @@ last_updated: YYYY-MM-DD
 ## Answer
 <synthesized answer with [[wikilink]] citations>
 
+## Extracted Relationships
+- Subject → predicate → Object
+
 ## Sources
 - [[PageName]] — what it contributed
 ```
+
+**`entities`** and **`concepts`** list the wiki pages discovered during this query. **`relations`** captures subject–predicate–object triples extracted from the Q&A; these are also summarised in `wiki/synthesis-map.md`.
 

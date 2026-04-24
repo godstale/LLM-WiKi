@@ -14,17 +14,18 @@ Agent-maintained personal knowledge base: ingest → query → lint → graph.
 ```
 raw/          # Drop zone for unprocessed docs (originals stay after ingest)
 wiki/
-  index.md        # Catalog of all pages — update on every ingest
-  log.md          # Append-only chronological record
-  overview.md     # Living synthesis
-  history.json    # Registry of all ingested sources
-  ontology.yaml   # (OPTIONAL) project ontology schema
-  originals/      # Read-only archive of source docs
-  sources/        # One summary page per source (kebab-case.md)
-  entities/       # People, companies, projects, products (TitleCase.md)
-  concepts/       # Ideas, frameworks, methods, theories (TitleCase.md)
-  syntheses/      # Saved query answers (kebab-case.md)
-graph/            # graph.json + graph.html
+  index.md          # Catalog of all pages — update on every ingest
+  log.md            # Append-only chronological record
+  overview.md       # Living synthesis
+  history.json      # Registry of all ingested sources
+  ontology.yaml     # (OPTIONAL) project ontology schema
+  synthesis-map.md  # Lightweight index of all saved query syntheses (append-only)
+  originals/        # Read-only archive of source docs
+  sources/          # One summary page per source (kebab-case.md)
+  entities/         # People, companies, projects, products (TitleCase.md)
+  concepts/         # Ideas, frameworks, methods, theories (TitleCase.md)
+  syntheses/        # Saved query answers (kebab-case.md)
+graph/              # graph.json + graph.html
 ```
 
 Page templates and frontmatter schema → see `references/templates.md`. Wikilinks are **case-sensitive**: `[[PageName]]`.
@@ -104,14 +105,26 @@ Check `wiki/history.json` for the candidate slug before ingesting:
 
 **For structural filters** (`class:`, `type:`, `AND/OR/NOT`, dotted field paths like `context.phase`) → read `references/query-advanced.md`
 
-1. Read `wiki/index.md` to identify the most relevant pages
-2. Read up to ~10 most relevant pages
-3. If summaries lack sufficient detail, read the original from the page's `source_file` field
-4. Synthesize a markdown answer with `[[PageName]]` wikilink citations throughout
-5. Include `## Sources` listing every page drawn from
-6. Ask: "Would you like this saved as a synthesis page?"
-   - Yes → write `wiki/syntheses/<slug>.md` (template: `references/templates.md`)
-   - Append to `wiki/log.md`: `## [YYYY-MM-DD] query | <question summary>`
+1. **Synthesis-map lookup** — if `wiki/synthesis-map.md` exists, read it in full; scan all entries and select the top 2–3 most semantically relevant past syntheses; read those `wiki/syntheses/<slug>.md` files in full
+2. Read `wiki/index.md` to identify the most relevant pages
+3. Read up to ~10 most relevant pages
+4. If summaries lack sufficient detail, read the original from the page's `source_file` field
+5. Synthesize a markdown answer with `[[PageName]]` wikilink citations; reference matched past syntheses with `[[syntheses/slug]]` links if they informed the answer
+6. Include `## Sources` listing every page and synthesis drawn from
+7. Ask: "Would you like this saved as a synthesis page?"
+   - Yes →
+     a. Extract entities, concepts, and relations discovered during the Q&A
+     b. Write `wiki/syntheses/<slug>.md` (template: `references/templates.md`)
+     c. Append entry to `wiki/synthesis-map.md` (append-only — never edit past entries):
+        ```
+        ## YYYY-MM-DD | <slug>
+        Query: <one-line question>
+        Entities: Entity1, Entity2, ...
+        Concepts: Concept1, Concept2, ...
+        Relations: Subject→predicate→Object, ...
+        Preview: <one-sentence answer summary>
+        ```
+     d. Append to `wiki/log.md`: `## [YYYY-MM-DD] query | <question summary>`
 
 **Empty wiki:** *"The wiki is empty. Run `/wiki-ingest <file>` to add your first source."*
 
@@ -208,6 +221,7 @@ Full flow for `/wiki-ontology-init`, `/wiki-ontology-show`, `/wiki-ontology-vali
 - **`wiki/index.md`** must be updated every ingest — stale index breaks `/wiki-query`
 - **`wiki/log.md`** is append-only — never edit past entries
 - **`wiki/history.json`**: always use Write tool — read existing first, merge, then overwrite
+- **`wiki/synthesis-map.md`** is append-only — never edit past entries; keep each entry under ~200 chars per line
 - **`/wiki-delete`** never removes shared pages — cross-check references before deleting entity/concept pages
 - **Source slugs** in `sources:` frontmatter must exactly match the source filename without extension
 - **All scripts** run from the wiki project root (`python tools/...`, not from the scripts directory)
