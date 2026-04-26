@@ -2,6 +2,8 @@
 
 An agent-maintained personal knowledge base for Claude Code. Drop in source documents, and Claude ingests, queries, lints, and visualizes your knowledge — no API key or Python scripts required.
 
+> 한국어 가이드: [README.ko.md](README.ko.md)
+
 ```
 ingest → query → lint → graph
 ```
