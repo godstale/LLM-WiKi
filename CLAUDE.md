@@ -10,12 +10,13 @@ The repo itself is the **skill distribution package**, not a wiki.
 
 ## Slash Commands (Skill Entry Points)
 
-All four commands are defined in `SKILL.md`:
+All commands are defined in `SKILL.md`:
 
 | Command | Purpose |
 |---------|---------|
 | `/wiki-ingest [file\|--from <folder>] [--to <folder>]` | Ingest raw docs into the wiki |
-| `/wiki-query <question>` | Query and synthesize from the wiki |
+| `/wiki-query <question>` | Query the wiki and present the answer |
+| `/wiki-synthesize [slug]` | Save the most recent query answer as a synthesis |
 | `/wiki-lint` | Health-check for broken links, orphans, contradictions |
 | `/wiki-graph` | Build interactive vis.js knowledge graph |
 

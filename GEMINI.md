@@ -15,7 +15,7 @@ This file provides instructional context for AI agents working within the **LLM 
 
 ## Key Components
 
-- **`SKILL.md`**: Defines the agent's behavior and slash commands (`/wiki-ingest`, `/wiki-query`, `/wiki-lint`, `/wiki-graph`).
+- **`SKILL.md`**: Defines the agent's behavior and slash commands (`/wiki-ingest`, `/wiki-query`, `/wiki-synthesize`, `/wiki-lint`, `/wiki-graph`).
 - **`scripts/`**: Python utilities for complex tasks:
   - `lint.py`: Structural and graph-aware wiki health checks.
   - `build_graph.py`: Generates `graph/graph.json` and `graph/graph.html`.
@@ -45,6 +45,7 @@ pip install -r scripts/requirements.txt
 ### Key Commands
 - **Ingest:** `/wiki-ingest raw/document.pdf` (or use natural language: "ingest this file").
 - **Query:** `/wiki-query "What are the core themes of X?"`
+- **Synthesize:** `/wiki-synthesize` — save the most recent query answer to `wiki/syntheses/`. Run after `/wiki-query`.
 - **Lint:** `python scripts/lint.py --save` or `/wiki-lint`.
 - **Graph:** `python scripts/build_graph.py --open` or `/wiki-graph`.
 

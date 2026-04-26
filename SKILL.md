@@ -1,6 +1,6 @@
 ---
 name: llm-wiki
-description: 'Use when working with the LLM Wiki: /wiki-ingest [<file>|--from <folder>] [--to <folder>], /wiki-query <question>, /wiki-lint, /wiki-graph, /wiki-sources, /wiki-update <slug>, /wiki-delete <slug>, /wiki-ontology-init, /wiki-ontology-show, /wiki-ontology-validate. Also triggers on: "ingest raw/", "query:", "lint the wiki", "build the knowledge graph", "show ingest history", "update/delete wiki source", "set up ontology", "validate the ontology".'
+description: 'Use when working with the LLM Wiki: /wiki-ingest [<file>|--from <folder>] [--to <folder>], /wiki-query <question>, /wiki-synthesize [slug], /wiki-lint, /wiki-graph, /wiki-sources, /wiki-update <slug>, /wiki-delete <slug>, /wiki-ontology-init, /wiki-ontology-show, /wiki-ontology-validate. Also triggers on: "ingest raw/", "query:", "synthesize", "save synthesis", "lint the wiki", "build the knowledge graph", "show ingest history", "update/delete wiki source", "set up ontology", "validate the ontology".'
 ---
 
 # LLM Wiki
@@ -109,24 +109,37 @@ Check `wiki/history.json` for the candidate slug before ingesting:
 2. Read `wiki/index.md` to identify the most relevant pages
 3. Read up to ~10 most relevant pages
 4. If summaries lack sufficient detail, read the original from the page's `source_file` field
-5. Synthesize a markdown answer with `[[PageName]]` wikilink citations; reference matched past syntheses with `[[syntheses/slug]]` links if they informed the answer
+5. Present the answer with `[[PageName]]` wikilink citations; reference matched past syntheses with `[[syntheses/slug]]` links if they informed the answer
 6. Include `## Sources` listing every page and synthesis drawn from
-7. Ask: "Would you like this saved as a synthesis page?"
-   - Yes →
-     a. Extract entities, concepts, and relations discovered during the Q&A
-     b. Write `wiki/syntheses/<slug>.md` (template: `references/templates.md`)
-     c. Append entry to `wiki/synthesis-map.md` (append-only — never edit past entries):
-        ```
-        ## YYYY-MM-DD | <slug>
-        Query: <one-line question>
-        Entities: Entity1, Entity2, ...
-        Concepts: Concept1, Concept2, ...
-        Relations: Subject→predicate→Object, ...
-        Preview: <one-sentence answer summary>
-        ```
-     d. Append to `wiki/log.md`: `## [YYYY-MM-DD] query | <question summary>`
+7. End with: `💾 이 답변을 저장하려면: \`/wiki-synthesize\``
 
 **Empty wiki:** *"The wiki is empty. Run `/wiki-ingest <file>` to add your first source."*
+
+---
+
+## /wiki-synthesize
+
+**$ARGUMENTS** (optional) = custom slug override (e.g. `/wiki-synthesize my-custom-slug`)
+
+Saves the most recent `/wiki-query` answer from this session as a reusable synthesis.
+
+1. Retrieve the query question and composed answer from the current session context
+2. Generate a kebab-case slug from the query question (or use the provided override)
+3. Extract entities, concepts, and relations from the answer
+4. Write `wiki/syntheses/<slug>.md` (template: `references/templates.md`)
+5. Append to `wiki/synthesis-map.md` (append-only — never edit past entries):
+   ```
+   ## YYYY-MM-DD | <slug>
+   Query: <one-line question>
+   Entities: Entity1, Entity2, ...
+   Concepts: Concept1, Concept2, ...
+   Relations: Subject→predicate→Object, ...
+   Preview: <one-sentence answer summary>
+   ```
+6. Append to `wiki/log.md`: `## [YYYY-MM-DD] query | <question summary>`
+7. Output: `✅ Saved synthesis: [[syntheses/<slug>]]` — use `/wiki-delete <slug>` to remove if not needed
+
+**No recent query in session:** *"No query found in this session. Run `/wiki-query <question>` first."*
 
 ---
 
