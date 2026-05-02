@@ -1,6 +1,6 @@
 ---
 name: llm-wiki
-description: 'Use when working with the LLM Wiki: /wiki-ingest [<file>|--from <folder>] [--to <folder>], /wiki-query <question>, /wiki-synthesize [slug], /wiki-lint, /wiki-graph, /wiki-sources, /wiki-update <slug>, /wiki-delete <slug>, /wiki-ontology-init, /wiki-ontology-show, /wiki-ontology-validate. Also triggers on: "ingest raw/", "query:", "synthesize", "save synthesis", "lint the wiki", "build the knowledge graph", "show ingest history", "update/delete wiki source", "set up ontology", "validate the ontology".'
+description: 'Use when working with the LLM Wiki: /wiki-ingest [<file>|--from <folder>] [--to <folder>], /wiki-ingest-ontology <file> [--schema <type>], /wiki-query <question>, /wiki-synthesize [slug], /wiki-lint, /wiki-graph, /wiki-sources, /wiki-update <slug>, /wiki-delete <slug>, /wiki-ontology-init, /wiki-ontology-show, /wiki-ontology-validate. Also triggers on: "ingest raw/", "ingest ontology from", "query:", "synthesize", "save synthesis", "lint the wiki", "build the knowledge graph", "show ingest history", "update/delete wiki source", "set up ontology", "validate the ontology".'
 ---
 
 # LLM Wiki
@@ -19,12 +19,14 @@ wiki/
   overview.md       # Living synthesis
   history.json      # Registry of all ingested sources
   ontology.yaml     # (OPTIONAL) project ontology schema
+  ontology-registry.md # (OPTIONAL) Index of generated ontology data files
   synthesis-map.md  # Lightweight index of all saved query syntheses (append-only)
   originals/        # Read-only archive of source docs
   sources/          # One summary page per source (kebab-case.md)
   entities/         # People, companies, projects, products (TitleCase.md)
   concepts/         # Ideas, frameworks, methods, theories (TitleCase.md)
   syntheses/        # Saved query answers (kebab-case.md)
+  ontologies/       # (OPTIONAL) Structured YAML knowledge data
 graph/              # graph.json + graph.html
 ```
 
@@ -99,19 +101,47 @@ Check `wiki/history.json` for the candidate slug before ingesting:
 
 ---
 
+## /wiki-ingest-ontology
+
+**Arguments:**
+- `<file>` → source file to analyze (e.g. `raw/scala-roadmap.md`)
+- `--schema <type>` → (optional) use specific extraction schema (e.g. `roadmap`, `academic`, `business`)
+
+**Ontology Ingest Strategy (Exhaustive & High Granularity):**
+
+1. **Mandate:** Do NOT summarize. Perform **Exhaustive Extraction**. Every noun-based object (tool, library, framework, skill, concept, phase) mentioned in the document MUST be extracted as an entity or concept.
+2. **Hierarchy Preservation:** Map the document's structure (headings, lists) to relationships. Use `part_of` to link sub-items to their parent categories or phases.
+3. **Extraction Process:**
+   - Read the source file and `references/ontology-data-template.yaml`.
+   - **Entities:** Extract ALL tangible tools, platforms, and libraries (e.g., every single library listed in a roadmap).
+   - **Concepts:** Extract ALL abstract ideas, methods, paradigms, and skills.
+   - **Relationships:** Map ALL explicit and implicit connections (e.g., "A is a prerequisite for B" → `requires`, "A is a type of B" → `part_of`).
+4. **Output Format:** Generate `wiki/ontologies/<slug>.yaml`. If the list is long, ensure the YAML is well-structured and complete.
+5. **Update Registry:** Ensure the entry in `wiki/ontology-registry.md` is current.
+6. **Log:** Append to `wiki/log.md`: `## [YYYY-MM-DD] ontology-ingest (exhaustive) | <slug>`.
+
+---
+
 ## /wiki-query
 
 **$ARGUMENTS** = the question to answer
 
 **For structural filters** (`class:`, `type:`, `AND/OR/NOT`, dotted field paths like `context.phase`) → read `references/query-advanced.md`
 
-1. **Synthesis-map lookup** — if `wiki/synthesis-map.md` exists, read it in full; scan all entries and select the top 2–3 most semantically relevant past syntheses; read those `wiki/syntheses/<slug>.md` files in full
-2. Read `wiki/index.md` to identify the most relevant pages
-3. Read up to ~10 most relevant pages
-4. If summaries lack sufficient detail, read the original from the page's `source_file` field
-5. Present the answer with `[[PageName]]` wikilink citations; reference matched past syntheses with `[[syntheses/slug]]` links if they informed the answer
-6. Include `## Sources` listing every page and synthesis drawn from
-7. End with: `💾 이 답변을 저장하려면: \`/wiki-synthesize\``
+1. **Knowledge Source Discovery:**
+   - Scan `wiki/synthesis-map.md` and `wiki/ontology-registry.md`.
+   - Read `wiki/index.md` to identify relevant pages.
+2. **Context Gathering:**
+   - Read up to ~10 most relevant pages from `wiki/sources/`, `wiki/entities/`, `wiki/concepts/`.
+   - **Ontology Data Priority:** If relevant YAML files exist in `wiki/ontologies/`, read them in full. These files provide high-precision structural data (e.g., technical requirements, entity relations) that should take precedence over summary text for technical analysis.
+3. **Synthesis:**
+   - Integrate information from summaries, past syntheses, and structured ontology data.
+   - If summaries lack detail, read the original source file.
+4. **Response Generation:**
+   - Present the answer with `[[PageName]]` citations.
+   - Reference ontology data with `[[ontologies/slug.yaml]]` if it heavily informed the answer.
+   - Include `## Sources` listing all used pages, syntheses, and ontology data.
+5. End with: `💾 이 답변을 저장하려면: \`/wiki-synthesize\``
 
 **Empty wiki:** *"The wiki is empty. Run `/wiki-ingest <file>` to add your first source."*
 

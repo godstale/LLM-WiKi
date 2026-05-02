@@ -1,0 +1,116 @@
+version: 1
+source_slug: "scala"
+title: "Exhaustive Scala Roadmap Ontology"
+last_updated: "2026-05-02"
+
+# ---------- 1. Entities (Tools, Platforms, Frameworks) ----------
+entities:
+  # IDEs
+  - { id: "intellij-idea", label: "IntelliJ IDEA", class: "Tool", properties: { category: "IDE", rank: "Primary" } }
+  - { id: "vs-code", label: "VS Code", class: "Tool", properties: { category: "IDE", rank: "Primary" } }
+  - { id: "vim", label: "Vim", class: "Tool", properties: { category: "IDE", rank: "Primary" } }
+  - { id: "zed", label: "Zed", class: "Tool", properties: { category: "IDE", rank: "Primary" } }
+  - { id: "emacs", label: "Emacs", class: "Tool", properties: { category: "IDE", rank: "Secondary" } }
+  - { id: "sublime", label: "Sublime", class: "Tool", properties: { category: "IDE", rank: "Secondary" } }
+
+  # Build Tools
+  - { id: "scalacli", label: "ScalaCLI", class: "Tool", properties: { category: "Build Tool", ecosystem: "Scala-centered" } }
+  - { id: "sbt", label: "sbt", class: "Tool", properties: { category: "Build Tool", ecosystem: "Scala-centered" } }
+  - { id: "mill", label: "Mill", class: "Tool", properties: { category: "Build Tool", ecosystem: "Scala-centered" } }
+  - { id: "gradle", label: "Gradle", class: "Tool", properties: { category: "Build Tool", ecosystem: "JVM-common" } }
+  - { id: "maven", label: "Maven", class: "Tool", properties: { category: "Build Tool", ecosystem: "JVM-common" } }
+
+  # Ecosystems & Platforms
+  - { id: "cats", label: "Cats", class: "Ecosystem" }
+  - { id: "zio-ecosystem", label: "ZIO", class: "Ecosystem" }
+  - { id: "li-haoyi", label: "Li Haoyi", class: "Ecosystem" }
+  - { id: "akka", label: "Akka", class: "Ecosystem" }
+  - { id: "pekko", label: "Pekko", class: "Ecosystem" }
+  - { id: "jvm", label: "JVM", class: "Platform" }
+  - { id: "scala-native", label: "Scala Native", class: "Platform" }
+  - { id: "scala-js", label: "Scala.js", class: "Platform" }
+
+  # Testing
+  - { id: "scalatest", label: "ScalaTest", class: "Tool", properties: { type: "Unit/Integration/Performance" } }
+  - { id: "munit", label: "mUnit", class: "Tool", properties: { type: "Unit" } }
+  - { id: "utest", label: "uTest", class: "Tool" }
+  - { id: "junit", label: "JUnit", class: "Tool" }
+  - { id: "zio-test", label: "ZIO Test", class: "Tool" }
+  - { id: "specs2", label: "specs2", class: "Tool" }
+  - { id: "gatling", label: "Gatling", class: "Tool", properties: { type: "Performance" } }
+
+  # Backend Frameworks
+  - { id: "scalatra", label: "Scalatra", class: "Tool" }
+  - { id: "sttp", label: "sttp", class: "Tool" }
+  - { id: "akka-http", label: "Akka HTTP", class: "Tool" }
+  - { id: "play-framework", label: "Play", class: "Tool" }
+  - { id: "tapir", label: "Tapir", class: "Tool" }
+  - { id: "http4s", label: "http4s", class: "Tool" }
+
+  # GUI & Mobile
+  - { id: "slinky", label: "Slinky", class: "Tool", properties: { platform: "Web" } }
+  - { id: "calico", label: "Calico", class: "Tool", properties: { platform: "Web" } }
+  - { id: "laminar", label: "Laminar", class: "Tool", properties: { platform: "Web" } }
+  - { id: "react-js", label: "React.js", class: "Tool", properties: { platform: "Web" } }
+  - { id: "scalafx", label: "ScalaFX", class: "Tool", properties: { platform: "Desktop" } }
+  - { id: "javafx", label: "JavaFX", class: "Tool", properties: { platform: "Desktop" } }
+  - { id: "scala-android-plugin", label: "scala-android-plugin", class: "Tool", properties: { platform: "Android" } }
+
+  # Concurrency & Data
+  - { id: "ox", label: "Ox", class: "Tool" }
+  - { id: "gears", label: "Gears", class: "Tool" }
+  - { id: "fs2", label: "FS2", class: "Tool", properties: { type: "Streaming" } }
+  - { id: "zio-streams", label: "ZIO Streams", class: "Tool" }
+  - { id: "spark", label: "Spark", class: "Tool", properties: { type: "Distributed Computing" } }
+  - { id: "slick", label: "Slick", class: "Tool", properties: { type: "Database" } }
+  - { id: "scalikejdbc", label: "ScalikeJDBC", class: "Tool" }
+  - { id: "doobie", label: "Doobie", class: "Tool" }
+  - { id: "quill", label: "Quill", class: "Tool" }
+  - { id: "circe", label: "Circe", class: "Tool", properties: { type: "JSON" } }
+
+# ---------- 2. Concepts (Skills, Methods, Phases) ----------
+concepts:
+  # Phases
+  - { id: "phase-1", label: "Introduction & Setting Up Scala", class: "Phase" }
+  - { id: "phase-2", label: "Learn the Basics", class: "Phase" }
+  - { id: "phase-3", label: "Tools, Ecosystem & Platforms", class: "Phase" }
+  - { id: "phase-4", label: "Frameworks and Libraries", class: "Phase" }
+  - { id: "phase-5", label: "Advanced Topics", class: "Phase" }
+
+  # Basic Skills
+  - { id: "variables-constants", label: "Variables & Constants", class: "Skill" }
+  - { id: "pattern-matching", label: "Pattern Matching", class: "Skill" }
+  - { id: "error-handling", label: "Error Handling", class: "Skill" }
+  - { id: "recursion", label: "Recursion", class: "Skill" }
+  - { id: "generics", label: "Generic Types", class: "Skill" }
+
+  # Advanced Skills
+  - { id: "referential-transparency", label: "Referential Transparency", class: "Principle" }
+  - { id: "pure-functions", label: "Pure Functions", class: "Principle" }
+  - { id: "monads", label: "Monads", class: "Concept" }
+  - { id: "category-theory", label: "Category Theory", class: "Concept" }
+  - { id: "macros", label: "Macros", class: "Skill" }
+  - { id: "typeclasses", label: "Typeclasses", class: "Skill" }
+
+# ---------- 3. Relationships (CONNECTIONS) ----------
+relationships:
+  # Phase hierarchy
+  - { source: "intellij-idea", predicate: "part_of", target: "phase-1" }
+  - { source: "variables-constants", predicate: "part_of", target: "phase-2" }
+  - { source: "sbt", predicate: "part_of", target: "phase-3" }
+  - { source: "spark", predicate: "part_of", target: "phase-4" }
+  - { source: "monads", predicate: "part_of", target: "phase-5" }
+
+  # Prerequisite / Sequence
+  - { source: "phase-1", predicate: "precedes", target: "phase-2" }
+  - { source: "phase-2", predicate: "precedes", target: "phase-3" }
+  - { source: "phase-3", predicate: "precedes", target: "phase-4" }
+  - { source: "pure-functions", predicate: "requires", target: "referential-transparency" }
+  - { source: "zio", predicate: "requires", target: "pure-functions" }
+
+# ---------- 4. Metadata & Tags ----------
+tags: ["scala", "roadmap", "exhaustive", "ontology"]
+metadata:
+  original_file: "test/ontology_test/scala.md"
+  confidence_score: 1.0
+  extraction_mode: "exhaustive"

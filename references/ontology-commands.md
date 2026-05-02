@@ -73,34 +73,41 @@ Next: /wiki-ingest | /wiki-ontology-validate | /wiki-ontology-init --edit <stage
 
 ## /wiki-ontology-validate
 
-Checks all existing instances against `wiki/ontology.yaml`.
+*(... existing validate content ...)*
 
-**Option A — Python Script (preferred):**
-```bash
-python scripts/ontology_validate.py
-python scripts/ontology_validate.py --save    # save to wiki/ontology-validation-report.md
-python scripts/ontology_validate.py --json    # machine-readable JSON on stdout
+---
+
+## /wiki-ingest-ontology
+
+Extracts structured knowledge from a source document into a machine-readable YAML file.
+
+**Arguments:**
+- `<file>` → path to the source document.
+- `--schema <type>` → (optional) specific domain schema.
+
+**Flow:**
+
+1. **Preparation:** Read the source file and `references/ontology-data-template.yaml`.
+2. **Knowledge Extraction:**
+   - Identify domain entities (tools, libraries, components).
+   - Identify domain concepts (theories, skills, patterns).
+   - Map relationships (X is part of Y, X requires Z).
+   - If `--schema roadmap` is used, prioritize extraction of 'Phases', 'Topics', and 'IDE/Tools' as seen in developer roadmaps.
+3. **Storage:**
+   - Generate a slug from the filename.
+   - Write `wiki/ontologies/<slug>.yaml` using the universal template.
+4. **Registration:**
+   - Check if `wiki/ontology-registry.md` exists. Create it if not.
+   - Append the new entry: `- [[<slug>]] — Knowledge data extracted from [[sources/<slug>]]`.
+5. **Log:** Append to `wiki/log.md`: `## [YYYY-MM-DD] ontology-ingest | <slug>`.
+
+**Output:**
 ```
-
-**Option B — Agent-based:**
-
-1. If `wiki/ontology.yaml` absent → *"No ontology configured. Nothing to validate."*
-2. Load the ontology
-3. Glob every `.md` in `wiki/sources/`, `wiki/entities/`, `wiki/concepts/`, `wiki/syntheses/`. For each page, run checks at two severity levels:
-
-   **ERROR** (schema contract broken — must fix):
-   - `class:` is not declared in any axis's `default_classes`
-   - `relations[].predicate` is not declared in `relations:` block
-   - `context.phase` is not in `workflow.phases[].id`
-   - Domain/range mismatch on a declared predicate
-
-   **WARNING** (data gap — should fix):
-   - Properties listed in the class's `properties:` array are absent from the page frontmatter
-   - Activity instances with no `context.phase` when phases are declared
-
-4. Produce violation report grouped by severity (see format below)
-5. Ask: *"Save to `wiki/ontology-validation-report.md`?"*
-6. Append to `wiki/log.md`: `## [YYYY-MM-DD] ontology-validate | <N> errors, <M> warnings`
+✅ Knowledge extraction complete.
+✅ Data saved to: wiki/ontologies/<slug>.yaml
+✅ Registered in: wiki/ontology-registry.md
+Next: Run /wiki-query to use this data in analysis.
+```
 
 ---
 

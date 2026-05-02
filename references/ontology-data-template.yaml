@@ -1,0 +1,51 @@
+# ============================================================
+# Universal Ontology Data Template — LLM Wiki
+# ============================================================
+# This template defines the structure for individual knowledge
+# data files generated via `/wiki-ingest-ontology`.
+#
+# These files live in `wiki/ontologies/<slug>.yaml`.
+# ============================================================
+
+version: 1
+source_slug: "<original-source-slug>"
+title: "<Title of the Knowledge Domain>"
+last_updated: "YYYY-MM-DD"
+
+# ---------- 1. Entities (WHO/WHAT) ----------
+# Tangible objects, people, tools, organizations, etc.
+entities:
+  - id: "unique-id-kebab-case"
+    label: "Display Name"
+    class: "ClassName" # Must match a class in wiki/ontology.yaml if exists
+    properties:
+      # Key-value pairs specific to this entity
+      # e.g., category: "Testing", version: "1.0"
+    description: "Brief description of the entity"
+
+# ---------- 2. Concepts (IDEAS/METHODS) ----------
+# Abstract ideas, frameworks, skills, goals, etc.
+concepts:
+  - id: "unique-id-kebab-case"
+    label: "Display Name"
+    class: "ClassName"
+    properties:
+      # Key-value pairs specific to this concept
+    description: "Brief explanation of the concept"
+
+# ---------- 3. Relationships (CONNECTIONS) ----------
+# How the entities and concepts are linked.
+relationships:
+  - source: "subject-id"
+    predicate: "predicate_name" # e.g., part_of, requires, leads_to
+    target: "object-id"
+    metadata:
+      # Optional context for the relationship
+      strength: "primary | secondary"
+      context: "Brief reason for connection"
+
+# ---------- 4. Metadata & Tags ----------
+tags: []
+metadata:
+  original_file: "path/to/original"
+  confidence_score: 0.0 # Agent's confidence in extraction
