@@ -77,4 +77,5 @@ When moving original files using the `--to` flag in `/wiki-ingest`, follow the P
 - **Maintain Integrity:** Never modify files in `wiki/originals/`.
 - **Update the Index:** Always update `wiki/index.md` after an ingestion.
 - **Audit Links:** Regularly run `/wiki-lint` to fix broken `[[WikiLinks]]`.
+- **Wiki-Hub Registry:** If a `wiki-hub.md` file exists at the root, treat it as the authoritative registry for external, imported wiki files. Do not overwrite or delete files tracked in `wiki-hub.md` without warning the user.
 - **Be Concise:** Wiki summaries should be 2–4 sentences, focusing on key claims and connections.

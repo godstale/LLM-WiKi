@@ -195,6 +195,38 @@ Run after loading `wiki/ontology.yaml` (step 2a) and before writing the source p
 
 ---
 
+## Hierarchical Index Management
+
+The wiki uses an N-level hierarchical categorization system for `wiki/index.md`.
+
+### Category Syntax
+- Use `/` as a separator for levels (e.g., `Hobby/Travel/SouthAmerica`).
+- Case-sensitive; prefer TitleCase or established project terms.
+
+### Default Top-Level Categories (Level 1)
+The skill provides these as the foundation. Always try to map new content to one of these first:
+- `정치`: 국내외 정치, 행정, 외교.
+- `경제/경영`: 금융, 산업, 기업, 재테크.
+- `기술/과학`: IT, AI, 기초과학, 우주, 환경.
+- `사회`: 교육, 노동, 사건사고, 인구, 지역이슈.
+- `문화/생활`: 예술, 여행, 건강, 라이프스타일.
+- `기타`: 개인자료, 시스템/에이전트 관련 자료, 기타 미분류 자료.
+
+### Index Markdown Mapping
+Map levels to Markdown headers in `wiki/index.md`:
+- **Level 1** (`Hobby`) → `## Hobby`
+- **Level 2** (`Hobby/Cycling`) → `### Cycling`
+- **Level 3** (`Hobby/Travel/SouthAmerica`) → `#### SouthAmerica`
+- (and so on)
+
+### Management Rules
+1. **Dynamic Creation:** If a specific sub-category (Level 2+) is required by content but doesn't exist, create it under the appropriate parent.
+2. **Modification:** If a category path changes, update all entries under that section and move the section header.
+3. **Deletion:** If a category section becomes empty after a deletion, remove the header.
+4. **Maintenance:** Always maintain entries as `- [Title](sources/slug.md) — mandatory summary` under the most specific matching header.
+
+---
+
 ## Argument Parsing Rules
 
 - File path (has extension or resolves to a file) → single-file ingest
